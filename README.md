@@ -28,3 +28,8 @@ Based on PlatformIO Core, version 6.2.0 for development.
 - 3V3 - HX711 VCC, Buzzer VCC
 - VIN - LM2596 OUT
 - GND - Common ground
+
+## How to start
+1. Turn on ESP32, yellow diode should start blinking
+2. Connect to Pet_Hydration_Access_Point WiFi with your mobile device
+3. Provide an SSID and a password, so ESP32 can connect to your WiFi; when successful, you should hear two short beeps
