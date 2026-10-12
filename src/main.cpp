@@ -2,6 +2,8 @@
 #include <WiFi.h>
 #include <WiFiManager.h>
 #include "HX711.h"
+#include <HTTPClient.h>
+#include "api.h"
 
 #define DOUT    16
 #define CLK     17
@@ -15,15 +17,6 @@ String macAddress;
 bool inHotspotMode = false;
 unsigned long hotspotLedMs = 0;
 bool hotspotLedState = false;
-
-String getMac() {
-    uint8_t mac[6];
-    esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    char buf[18];
-    snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X",
-             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    return String(buf);
-}
 
 void runWifiManager() {
     WiFiManager wifiManager;
@@ -67,12 +60,12 @@ void setup() {
     pinMode(LED_Y, OUTPUT);
     pinMode(LED_G, OUTPUT);
 
-    Serial.println("1. Getting MAC address");
-    macAddress = getMac();
-    Serial.println("MAC: " + macAddress);
-
-    Serial.println("2. Configuring WiFI");
+    Serial.println("1. Configuring WiFI");
     runWifiManager();
+
+    Serial.println("2. Sending MAC address");
+    String mac = WiFi.macAddress();
+    sendHeartbeat(mac);
 }
 
 void loop() {
