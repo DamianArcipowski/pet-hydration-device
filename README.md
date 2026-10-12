@@ -3,6 +3,7 @@
 ## General information
 IoT project for automatically refilling the water in pets bowl.
 Based on PlatformIO Core, version 6.2.0 for development.
+To compile and run a program execute `platformio run -t upload` in a root directory of a project.
 
 ## List of devices
 - ESP32 with ESP-WROOM-32 module
