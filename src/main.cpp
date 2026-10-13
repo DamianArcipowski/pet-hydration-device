@@ -4,54 +4,17 @@
 #include "HX711.h"
 #include <HTTPClient.h>
 #include "api.h"
+#include "scale.h"
 
-#define DOUT    16
-#define CLK     17
+#define SCALE_DOUT    16
+#define SCALE_SCK     17
+#define CALIBRATION 0  // to be set on a target scale
 #define BUZZER  12
 #define LED_G   26
 #define LED_Y   27
 
-HX711 scale;
-String macAddress;
-
-bool inHotspotMode = false;
-unsigned long hotspotLedMs = 0;
-bool hotspotLedState = false;
-
-void runWifiManager() {
-    WiFiManager wifiManager;
-    wifiManager.resetSettings();  // only for testing, needs to be removed later as it wipes out wifi credentials
-    wifiManager.setConfigPortalTimeout(300);
-
-    wifiManager.setAPCallback([](WiFiManager* wm) {
-        Serial.println("Hotspot active: " + wm->getConfigPortalSSID());
-        inHotspotMode = true;
-        digitalWrite(LED_Y, HIGH);
-    });
-
-    wifiManager.setConfigPortalBlocking(false);
-    wifiManager.autoConnect("Pet_Hydration_Access_Point");
-
-    while (WiFi.status() != WL_CONNECTED) {
-        wifiManager.process();
-
-        if (inHotspotMode && millis() - hotspotLedMs > 500) {
-            hotspotLedMs = millis();
-            hotspotLedState = !hotspotLedState;
-            digitalWrite(LED_Y, hotspotLedState);
-        }
-
-        delay(10);
-    }
-
-    inHotspotMode = false;
-    digitalWrite(LED_Y, LOW);
-    Serial.println("ESP32 has been connected to WiFi: " + WiFi.localIP().toString());
-    tone(BUZZER, 1000, 150);
-    delay(200);
-    tone(BUZZER, 1000, 150);
-    digitalWrite(LED_G, HIGH);
-}
+const unsigned long HEARTBEAT_MS = 5000;
+unsigned long lastHeartbeat = 0;
 
 void setup() {
     Serial.begin(115200);
@@ -61,13 +24,30 @@ void setup() {
     pinMode(LED_G, OUTPUT);
 
     Serial.println("1. Configuring WiFI");
-    runWifiManager();
+    wifiSetup();
 
     Serial.println("2. Sending MAC address");
     String mac = WiFi.macAddress();
-    sendHeartbeat(mac);
+    sendDeviceMetrics(mac, 0, 0, 0);
+
+    Serial.println("3. Setting scale up");
+    scaleSetup(SCALE_DOUT, SCALE_SCK, CALIBRATION);
 }
 
 void loop() {
+    if (WiFi.status() != WL_CONNECTED) return;
 
+    unsigned long now = millis();
+    if (now - lastHeartbeat >= HEARTBEAT_MS) {
+        lastHeartbeat = now;
+
+        float weight = scaleRead();
+        sendDeviceMetrics(WiFi.macAddress(), weight, 0, 0); // valve and tank to be filled later
+
+        String cmd = getCommand(WiFi.macAddress());
+        if (cmd == "tare") {
+            scaleTare();
+            sendDeviceMetrics(WiFi.macAddress(), scaleRead(), 0, 0);
+        }
+    }
 }
