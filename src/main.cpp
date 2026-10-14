@@ -3,12 +3,14 @@
 #include <WiFiManager.h>
 #include "HX711.h"
 #include <HTTPClient.h>
+
 #include "api.h"
 #include "scale.h"
+#include "wifi_setup.h"
 
 #define SCALE_DOUT    16
 #define SCALE_SCK     17
-#define CALIBRATION 0  // to be set on a target scale
+#define CALIBRATION 1168  // to be set on a target scale
 #define BUZZER  12
 #define LED_G   26
 #define LED_Y   27
