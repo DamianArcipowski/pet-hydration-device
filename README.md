@@ -18,8 +18,8 @@ To compile and run a program execute `platformio run -t upload` in a root direct
 - Charger 12V 5A
 
 ## ESP32 pins description
-- D16 - HX711 DT
-- D17 - HX711 SCK
+- D18 - HX711 DT
+- D19 - HX711 SCK
 - D25 - IRFZ44N Gate
 - D26 - Green LED
 - D27 - Yellow LED
