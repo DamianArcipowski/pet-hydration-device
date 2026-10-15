@@ -13,7 +13,7 @@ bool hotspotLedState = false;
 
 void wifiSetup() {
     WiFiManager wifiManager;
-    wifiManager.resetSettings();  // only for testing, needs to be removed later as it wipes out wifi credentials
+    //wifiManager.resetSettings();  // only for testing, needs to be removed later as it wipes out wifi credentials
     wifiManager.setConfigPortalTimeout(300);
 
     wifiManager.setAPCallback([](WiFiManager* wm) {
