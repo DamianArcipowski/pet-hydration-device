@@ -19,7 +19,6 @@
 
 const unsigned long HEARTBEAT_MS = 5000;
 unsigned long lastHeartbeat = 0;
-bool isTared = false;
 
 void setup() {
     Serial.begin(115200);
@@ -49,18 +48,18 @@ void loop() {
         String cmd = getCommandAndSync(WiFi.macAddress());
         if (cmd == "tare") {
             float bowlWeight = scaleRead();
+            if (bowlWeight < 30.0f) {
+                reportTareResult(WiFi.macAddress(), 0.0f);
+                return;
+            }
             reportTareResult(WiFi.macAddress(), bowlWeight);
             scaleTare();
-            isTared = true;
             delay(1000);
             return;
         }
 
-        float weight = 0.0f;
-        if (isTared) {
-            float rawWeight = scaleRead();
-            weight = (rawWeight < WEIGHT_THRESHOLD_G) ? 0.0f : rawWeight;
-        }
+        float rawWeight = scaleRead();
+        float weight = (rawWeight < WEIGHT_THRESHOLD_G) ? 0.0f : rawWeight;
         sendDeviceMetrics(WiFi.macAddress(), weight, 0, 0); // valve and tank to be filled later
     }
 }
