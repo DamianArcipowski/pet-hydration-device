@@ -8,17 +8,21 @@
 #include "scale.h"
 #include "wifi_setup.h"
 
-#define SCALE_DT    18
-#define SCALE_SCK     19
-#define BUZZER  12
-#define LED_G   26
-#define LED_Y   27
+#define SCALE_DT     18
+#define SCALE_SCK    19
+#define BUZZER       12
+#define LED_G        26
+#define LED_Y        27
+#define LED_R        22
+#define FLOAT_SENSOR 23
+#define VALVE_PIN    25
 
 #define CALIBRATION 1177  // to be set on a target scale
 #define WEIGHT_THRESHOLD_G  2.0f
 
-const unsigned long HEARTBEAT_MS = 5000;
-unsigned long lastHeartbeat = 0;
+const unsigned short HEARTBEAT_MS = 5000;
+unsigned short lastHeartbeat = 0;
+bool valveState = false;
 
 void setup() {
     Serial.begin(115200);
@@ -26,6 +30,10 @@ void setup() {
     pinMode(BUZZER, OUTPUT);
     pinMode(LED_Y, OUTPUT);
     pinMode(LED_G, OUTPUT);
+    pinMode(LED_R, OUTPUT);
+    pinMode(FLOAT_SENSOR, INPUT_PULLUP);
+    pinMode(VALVE_PIN, OUTPUT);
+    digitalWrite(VALVE_PIN, LOW); 
 
     Serial.println("1. Configuring WiFI");
     wifiSetup();
@@ -60,6 +68,33 @@ void loop() {
 
         float rawWeight = scaleRead();
         float weight = (rawWeight < WEIGHT_THRESHOLD_G) ? 0.0f : rawWeight;
-        sendDeviceMetrics(WiFi.macAddress(), weight, 0, 0); // valve and tank to be filled later
+
+        int tankLow = (digitalRead(FLOAT_SENSOR) == LOW) ? 1 : 0;
+        if (tankLow) {
+            valveState = false;
+            digitalWrite(LED_G, LOW);
+            digitalWrite(LED_Y, LOW);
+            digitalWrite(LED_R, HIGH);
+        } else if (deviceConfig.bowl_capacity_ml > 0) {
+            float capacityG = deviceConfig.bowl_capacity_ml * 1.0f;
+            float lowThresholdG  = capacityG * deviceConfig.fill_low_pct;
+            float highThresholdG = capacityG * deviceConfig.fill_target_pct;
+
+            if (weight < lowThresholdG) {
+                valveState = true;
+                digitalWrite(LED_Y, HIGH);
+                digitalWrite(LED_G, LOW);
+                digitalWrite(LED_R, LOW);
+            } else if (weight >= highThresholdG) {
+                valveState = false;
+                digitalWrite(LED_G, HIGH);
+                digitalWrite(LED_Y, LOW);
+                digitalWrite(LED_R, LOW);
+            }
+        }
+
+        digitalWrite(VALVE_PIN, valveState ? HIGH : LOW);
+        sendDeviceMetrics(WiFi.macAddress(), weight, valveState ? 1 : 0, tankLow);
+        Serial.printf("Weight: %.1fg | Valve: %d | TankLow: %d\n", weight, valveState, tankLow);
     }
 }

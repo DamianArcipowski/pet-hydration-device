@@ -5,10 +5,11 @@
 const char* API_URL = "http://192.168.1.185:8080";
 
 struct DeviceConfig {
-  float calibration   = 1168.0f;
-  float bowl_weight_g = 0.0f;
+  float calibration      = 1177.0f;
+  float bowl_weight_g    = 0.0f;
   int   bowl_capacity_ml = 300;
   float fill_target_pct  = 0.8f;
+  float fill_low_pct     = 0.2f;
 };
 
 DeviceConfig deviceConfig;
@@ -58,6 +59,7 @@ String getCommandAndSync(const String& mac) {
   if (!doc["calibration"].isNull())      deviceConfig.calibration      = doc["calibration"].as<float>();
   if (!doc["bowl_weight_g"].isNull())    deviceConfig.bowl_weight_g    = doc["bowl_weight_g"].as<float>();
   if (!doc["bowl_capacity_ml"].isNull()) deviceConfig.bowl_capacity_ml = doc["bowl_capacity_ml"].as<int>();
+  if (!doc["fill_low_pct"].isNull())     deviceConfig.fill_low_pct     = doc["fill_low_pct"].as<float>();
   if (!doc["fill_target_pct"].isNull())  deviceConfig.fill_target_pct  = doc["fill_target_pct"].as<float>();
 
   return doc["command"].isNull() ? "" : doc["command"].as<String>();
