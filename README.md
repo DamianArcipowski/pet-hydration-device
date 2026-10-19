@@ -23,7 +23,7 @@ To compile and run a program execute `platformio run -t upload` in a root direct
 - D25 - IRFZ44N Gate
 - D26 - Green LED
 - D27 - Yellow LED
-- D14 - Red LED
+- D22 - Red LED
 - D12 - Buzzer
 - D23 - Float-type level sensor
 - 3V3 - HX711 VCC, Buzzer VCC
