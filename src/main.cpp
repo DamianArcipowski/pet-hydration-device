@@ -21,8 +21,8 @@
 #define CALIBRATION 1177  // to be set on a target scale
 #define WEIGHT_THRESHOLD_G  2.0f
 
-const unsigned short HEARTBEAT_MS = 5000;
-unsigned short lastHeartbeat = 0;
+const unsigned long HEARTBEAT_MS = 5000;
+unsigned long lastHeartbeat = 0;
 bool valveState = false;
 
 void setup() {
@@ -97,6 +97,6 @@ void loop() {
 
         digitalWrite(VALVE_PIN, valveState ? HIGH : LOW);
         sendDeviceMetrics(WiFi.macAddress(), weight, valveState ? 1 : 0, tankLow);
-        Serial.printf("Weight: %.1fg | Valve: %d | TankLow: %d\n", weight, valveState, tankLow);
+        Serial.printf("Weight: %.1fg | Valve: %d | TankLow: %d\n", weight, valveState, tankLow); // debug only
     }
 }
