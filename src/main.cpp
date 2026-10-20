@@ -7,6 +7,7 @@
 #include "api.h"
 #include "scale.h"
 #include "wifi_setup.h"
+#include "smoothing.h"
 
 #define SCALE_DT     18
 #define SCALE_SCK    19
@@ -67,7 +68,8 @@ void loop() {
         }
 
         float rawWeight = scaleRead();
-        float weight = (rawWeight < WEIGHT_THRESHOLD_G) ? 0.0f : rawWeight;
+        float filteredWeight = (rawWeight < WEIGHT_THRESHOLD_G) ? 0.0f : rawWeight;
+        float weight = smoothedWeight(filteredWeight);
 
         int tankLow = (digitalRead(FLOAT_SENSOR) == LOW) ? 1 : 0;
         if (tankLow) {
