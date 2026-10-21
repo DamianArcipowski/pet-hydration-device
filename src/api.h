@@ -14,7 +14,7 @@ struct DeviceConfig {
 
 DeviceConfig deviceConfig;
 
-void sendDeviceMetrics(const String& mac, float weight_g, int valve_open, int tank_low) {
+void sendDeviceMetrics(const String& mac, float weight_g, int valve_open, int tank_low, int calibrated) {
   if (WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
@@ -23,7 +23,8 @@ void sendDeviceMetrics(const String& mac, float weight_g, int valve_open, int ta
   http.addHeader("X-Device-MAC", mac);
   String body = "{\"weight_g\":"   + String(weight_g, 1) +
                 ",\"valve_open\":" + String(valve_open) +
-                ",\"tank_low\":"   + String(tank_low) + "}";
+                ",\"tank_low\":"   + String(tank_low) +
+                ",\"calibrated\":" + String(calibrated) + "}";
   http.POST(body);
   http.end();
 }

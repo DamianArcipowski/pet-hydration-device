@@ -19,3 +19,9 @@ float smoothedWeight(float newReading) {
   
   return sum / count;
 }
+
+void resetSmoothing() {
+    for (int i = 0; i < WEIGHT_HISTORY; i++) weightHistory[i] = 0;
+    weightHistoryIdx  = 0;
+    weightHistoryFull = false;
+}

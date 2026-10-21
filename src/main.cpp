@@ -24,6 +24,7 @@
 const unsigned long HEARTBEAT_MS = 5000;
 unsigned long lastHeartbeat = 0;
 bool valveState = false;
+bool isTared = false;
 
 void setup() {
     Serial.begin(115200);
@@ -41,7 +42,7 @@ void setup() {
 
     Serial.println("2. Sending initial metrics");
     String mac = WiFi.macAddress();
-    sendDeviceMetrics(mac, 0, 0, 0);
+    sendDeviceMetrics(mac, 0, 0, 0, 0);
 
     Serial.println("3. Initial scale set up");
     scaleSetup(SCALE_DT, SCALE_SCK, CALIBRATION);
@@ -63,6 +64,8 @@ void loop() {
             }
             reportTareResult(WiFi.macAddress(), bowlWeight);
             scaleTare();
+            resetSmoothing();
+            isTared = true;
             delay(1000);
             return;
         }
@@ -96,7 +99,7 @@ void loop() {
         }
 
         digitalWrite(VALVE_PIN, valveState ? HIGH : LOW);
-        sendDeviceMetrics(WiFi.macAddress(), weight, valveState ? 1 : 0, tankLow);
+        sendDeviceMetrics(WiFi.macAddress(), weight, valveState ? 1 : 0, tankLow, isTared ? 1: 0);
         Serial.printf("Weight: %.1fg | Valve: %d | TankLow: %d\n", weight, valveState, tankLow); // debug only
     }
 }
