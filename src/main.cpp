@@ -19,12 +19,12 @@
 #define VALVE_PIN    25
 
 #define CALIBRATION 1177  // to be set on a target scale
-#define WEIGHT_THRESHOLD_G  2.0f
+#define WEIGHT_THRESHOLD_G 2.0f
+#define BOWL_MIN_G 25.0f
 
 const unsigned long HEARTBEAT_MS = 5000;
 unsigned long lastHeartbeat = 0;
 bool valveState = false;
-bool isTared = false;
 
 void setup() {
     Serial.begin(115200);
@@ -58,29 +58,30 @@ void loop() {
         String cmd = getCommandAndSync(WiFi.macAddress());
         if (cmd == "tare") {
             float bowlWeight = scaleRead();
-            if (bowlWeight < 30.0f) {
+            if (bowlWeight < BOWL_MIN_G) {
                 reportTareResult(WiFi.macAddress(), 0.0f);
                 return;
             }
             reportTareResult(WiFi.macAddress(), bowlWeight);
-            scaleTare();
+            deviceConfig.bowl_weight_g = bowlWeight;  
             resetSmoothing();
-            isTared = true;
             delay(1000);
             return;
         }
+
+        bool isTared = deviceConfig.bowl_weight_g > 0;  
 
         float rawWeight = scaleRead();
         float filteredWeight = (rawWeight < WEIGHT_THRESHOLD_G) ? 0.0f : rawWeight;
         float weight = smoothedWeight(filteredWeight);
 
         int tankLow = (digitalRead(FLOAT_SENSOR) == LOW) ? 1 : 0;
-        if (tankLow) {
+        if (tankLow && isTared) {
             valveState = false;
             digitalWrite(LED_G, LOW);
             digitalWrite(LED_Y, LOW);
             digitalWrite(LED_R, HIGH);
-        } else if (deviceConfig.bowl_capacity_ml > 0) {
+        } else if (deviceConfig.bowl_capacity_ml > 0 && isTared) {
             float capacityG = deviceConfig.bowl_capacity_ml * 1.0f;
             float lowThresholdG  = capacityG * deviceConfig.fill_low_pct;
             float highThresholdG = capacityG * deviceConfig.fill_target_pct;
