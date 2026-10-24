@@ -8,6 +8,7 @@
 #include "scale.h"
 #include "wifi_setup.h"
 #include "smoothing.h"
+#include "leds.h"
 
 #define SCALE_DT     18
 #define SCALE_SCK    19
@@ -15,12 +16,14 @@
 #define LED_G        26
 #define LED_Y        27
 #define LED_R        22
+#define LED_W        21
 #define FLOAT_SENSOR 23
 #define VALVE_PIN    25
 
 #define CALIBRATION 1177  // to be set on a target scale
 #define WEIGHT_THRESHOLD_G 2.0f
 #define BOWL_MIN_G 25.0f
+#define BOWL_TOLERANCE_G 10.0f
 
 const unsigned long HEARTBEAT_MS = 5000;
 unsigned long lastHeartbeat = 0;
@@ -33,6 +36,7 @@ void setup() {
     pinMode(LED_Y, OUTPUT);
     pinMode(LED_G, OUTPUT);
     pinMode(LED_R, OUTPUT);
+    pinMode(LED_W, OUTPUT);
     pinMode(FLOAT_SENSOR, INPUT_PULLUP);
     pinMode(VALVE_PIN, OUTPUT);
     digitalWrite(VALVE_PIN, LOW); 
@@ -46,6 +50,9 @@ void setup() {
 
     Serial.println("3. Initial scale set up");
     scaleSetup(SCALE_DT, SCALE_SCK, CALIBRATION);
+    deviceConfig.bowl_weight_g = loadBowlWeight();
+
+    digitalWrite(LED_W, deviceConfig.bowl_weight_g > 0 ? LOW : HIGH);
 }
 
 void loop() {
@@ -56,6 +63,8 @@ void loop() {
         lastHeartbeat = now;
 
         String cmd = getCommandAndSync(WiFi.macAddress());
+        saveBowlWeight(deviceConfig.bowl_weight_g); 
+
         if (cmd == "tare") {
             float bowlWeight = scaleRead();
             if (bowlWeight < BOWL_MIN_G) {
@@ -69,18 +78,42 @@ void loop() {
             return;
         }
 
-        bool isTared = deviceConfig.bowl_weight_g > 0;  
+        if (cmd == "zero") {
+            scaleResetZero();
+            resetSmoothing();
+            Serial.println("Scale zero reset and saved to flash");
+            delay(1000);
+            return;
+        }
 
-        float rawWeight = scaleRead();
+        float gross = scaleRead();
+        if (isnan(gross)) {
+            Serial.println("Scale not ready - skipping cycle");
+            return;
+        }
+
+        bool isTared = deviceConfig.bowl_weight_g > 0; 
+        int tankLow = (digitalRead(FLOAT_SENSOR) == LOW) ? 1 : 0;
+
+        digitalWrite(LED_W, isTared ? LOW : HIGH);
+
+        if (isTared && gross < deviceConfig.bowl_weight_g - BOWL_TOLERANCE_G) {
+            valveState = false;
+            digitalWrite(VALVE_PIN, LOW);
+            resetSmoothing();
+            setLeds(false, true, true);
+            sendDeviceMetrics(WiFi.macAddress(), 0, 0, tankLow, 0);
+            Serial.printf("Bowl missing | Gross: %.1fg | Bowl: %.1fg\n", gross, deviceConfig.bowl_weight_g);
+            return;
+        } 
+
+        float rawWeight = gross - deviceConfig.bowl_weight_g;
         float filteredWeight = (rawWeight < WEIGHT_THRESHOLD_G) ? 0.0f : rawWeight;
         float weight = smoothedWeight(filteredWeight);
 
-        int tankLow = (digitalRead(FLOAT_SENSOR) == LOW) ? 1 : 0;
         if (tankLow && isTared) {
             valveState = false;
-            digitalWrite(LED_G, LOW);
-            digitalWrite(LED_Y, LOW);
-            digitalWrite(LED_R, HIGH);
+            setLeds(false, false, true);
         } else if (deviceConfig.bowl_capacity_ml > 0 && isTared) {
             float capacityG = deviceConfig.bowl_capacity_ml * 1.0f;
             float lowThresholdG  = capacityG * deviceConfig.fill_low_pct;
@@ -88,19 +121,16 @@ void loop() {
 
             if (weight < lowThresholdG) {
                 valveState = true;
-                digitalWrite(LED_Y, HIGH);
-                digitalWrite(LED_G, LOW);
-                digitalWrite(LED_R, LOW);
+                setLeds(false, true, false);
             } else if (weight >= highThresholdG) {
                 valveState = false;
-                digitalWrite(LED_G, HIGH);
-                digitalWrite(LED_Y, LOW);
-                digitalWrite(LED_R, LOW);
+                setLeds(true, false, false);
             }
         }
 
         digitalWrite(VALVE_PIN, valveState ? HIGH : LOW);
         sendDeviceMetrics(WiFi.macAddress(), weight, valveState ? 1 : 0, tankLow, isTared ? 1: 0);
-        Serial.printf("Weight: %.1fg | Valve: %d | TankLow: %d\n", weight, valveState, tankLow); // debug only
+        Serial.printf("Weight: %.1fml | Bowl: %.1fg | Valve: %d | TankLow: %d | Tared: %d\n",
+                      weight, deviceConfig.bowl_weight_g, valveState, tankLow, isTared); // debug only
     }
 }
