@@ -50,6 +50,7 @@ void setup() {
 
     Serial.println("3. Initial scale set up");
     scaleSetup(SCALE_DT, SCALE_SCK, CALIBRATION);
+    prefs.clear(); // temporary clear flash
     deviceConfig.bowl_weight_g = loadBowlWeight();
 
     digitalWrite(LED_W, deviceConfig.bowl_weight_g > 0 ? LOW : HIGH);
@@ -111,10 +112,14 @@ void loop() {
         float filteredWeight = (rawWeight < WEIGHT_THRESHOLD_G) ? 0.0f : rawWeight;
         float weight = smoothedWeight(filteredWeight);
 
-        if (tankLow && isTared) {
+        if (!isTared) {
+            valveState = false;
+            setLeds(false, false, false);
+        }
+        else if (tankLow) {
             valveState = false;
             setLeds(false, false, true);
-        } else if (deviceConfig.bowl_capacity_ml > 0 && isTared) {
+        } else if (deviceConfig.bowl_capacity_ml > 0) {
             float capacityG = deviceConfig.bowl_capacity_ml * 1.0f;
             float lowThresholdG  = capacityG * deviceConfig.fill_low_pct;
             float highThresholdG = capacityG * deviceConfig.fill_target_pct;
