@@ -41,8 +41,6 @@ void setup() {
 }
 
 void loop() {
-    if (WiFi.status() != WL_CONNECTED) return;
-
     unsigned long now = millis();
     if (now - lastHeartbeat < HEARTBEAT_MS) return;
     lastHeartbeat = now;
@@ -52,6 +50,10 @@ void loop() {
 
     if (cmd == "tare") {
         float bowlWeight = scaleRead();
+        if (isnan(bowlWeight)) {
+            Serial.println("Scale not ready - tare skipped");
+            return;
+        }
         if (bowlWeight < BOWL_MIN_G) {
             reportTareResult(mac, 0.0f);
             return;
