@@ -16,7 +16,6 @@ static const char PORTAL_STYLE[] = R"rawliteral(
   hr { border: 0; border-top: 1px solid #252C37; }
   label { color: #8B95A5; font-size: 13px; }
 
-  /* pola formularza — jak Field w aplikacji */
   input, select {
     background: #171C24;
     color: #FFFFFF;
@@ -29,7 +28,6 @@ static const char PORTAL_STYLE[] = R"rawliteral(
   input:focus, select:focus { outline: none; border-color: #4FC3F7; }
   input[type=checkbox] { width: auto; accent-color: #4FC3F7; }
 
-  /* przyciski — jak Button primary */
   button, input[type=submit] {
     background: #4FC3F7;
     color: #000000;
@@ -43,11 +41,9 @@ static const char PORTAL_STYLE[] = R"rawliteral(
   button:hover, input[type=submit]:hover { filter: brightness(1.1); }
   button.D { background: #EF5350; color: #FFFFFF; }
 
-  /* lista sieci po skanowaniu */
   .wrap > div > a[onclick] { color: #FFFFFF; font-weight: 600; text-decoration: none; }
-  .q { filter: invert(1); opacity: .85; }   /* ikonki zasięgu widoczne na ciemnym tle */
+  .q { filter: invert(1); opacity: .85; }
 
-  /* komunikaty (zapisano / błąd / info) */
   .msg {
     background: #171C24;
     color: #FFFFFF;
@@ -59,7 +55,6 @@ static const char PORTAL_STYLE[] = R"rawliteral(
   .msg.D { border-left-color: #EF5350; }
   .msg.P { border-left-color: #4FC3F7; }
 
-  /* strona Info */
   dt { color: #8B95A5; font-weight: 500; }
   dd { color: #FFFFFF; margin-bottom: 8px; }
   table { color: #FFFFFF; }
