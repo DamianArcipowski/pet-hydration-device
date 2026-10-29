@@ -14,6 +14,16 @@ struct DeviceConfig {
 
 DeviceConfig deviceConfig;
 
+String jsonEscape(const String& s) {
+  String out;
+  for (size_t i = 0; i < s.length(); i++) {
+    char c = s[i];
+    if (c == '"' || c == '\\') out += '\\';
+    out += c;
+  }
+  return out;
+}
+
 void sendDeviceMetrics(const String& mac, float weight_g, int valve_open, int tank_low, int calibrated) {
   if (WiFi.status() != WL_CONNECTED) return;
 
@@ -24,7 +34,8 @@ void sendDeviceMetrics(const String& mac, float weight_g, int valve_open, int ta
   String body = "{\"weight_g\":"   + String(weight_g, 1) +
                 ",\"valve_open\":" + String(valve_open) +
                 ",\"tank_low\":"   + String(tank_low) +
-                ",\"calibrated\":" + String(calibrated) + "}";
+                ",\"calibrated\":"  + String(calibrated) +
+                ",\"ssid\":\""      + jsonEscape(WiFi.SSID()) + "\"}";
   http.POST(body);
   http.end();
 }

@@ -14,7 +14,7 @@ bool hotspotLedState = false;
 
 void wifiSetup() {
     WiFiManager wifiManager;
-    wifiManager.resetSettings();  // only for testing, needs to be removed later as it wipes out wifi credentials
+    //wifiManager.resetSettings();  // only for testing, needs to be removed later as it wipes out wifi credentials
     wifiManager.setTitle("Pet Hydration");
     wifiManager.setCustomHeadElement(PORTAL_STYLE);
     wifiManager.setConfigPortalTimeout(300);

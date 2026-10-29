@@ -50,7 +50,7 @@ void setup() {
 
     Serial.println("3. Initial scale set up");
     scaleSetup(SCALE_DT, SCALE_SCK, CALIBRATION);
-    prefs.clear(); // temporary clear flash
+    //prefs.clear(); // temporary clear flash
     deviceConfig.bowl_weight_g = loadBowlWeight();
 
     digitalWrite(LED_W, deviceConfig.bowl_weight_g > 0 ? LOW : HIGH);
@@ -87,6 +87,14 @@ void loop() {
             return;
         }
 
+        if (cmd == "wifi_reset") {
+            Serial.println("WiFi reset requested - erasing credentials and restarting");
+            WiFiManager wifiManager;
+            wifiManager.resetSettings();
+            delay(1000);
+            ESP.restart();
+        }
+
         float gross = scaleRead();
         if (isnan(gross)) {
             Serial.println("Scale not ready - skipping cycle");
@@ -104,7 +112,6 @@ void loop() {
             resetSmoothing();
             setLeds(false, true, true);
             sendDeviceMetrics(WiFi.macAddress(), 0, 0, tankLow, 0);
-            Serial.printf("Bowl missing | Gross: %.1fg | Bowl: %.1fg\n", gross, deviceConfig.bowl_weight_g);
             return;
         } 
 
@@ -134,8 +141,6 @@ void loop() {
         }
 
         digitalWrite(VALVE_PIN, valveState ? HIGH : LOW);
-        sendDeviceMetrics(WiFi.macAddress(), weight, valveState ? 1 : 0, tankLow, isTared ? 1: 0);
-        Serial.printf("Weight: %.1fml | Bowl: %.1fg | Valve: %d | TankLow: %d | Tared: %d\n",
-                      weight, deviceConfig.bowl_weight_g, valveState, tankLow, isTared); // debug only
+        sendDeviceMetrics(WiFi.macAddress(), weight, valveState ? 1 : 0, tankLow, isTared ? 1 : 0);
     }
 }
